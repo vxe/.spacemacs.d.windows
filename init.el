@@ -32,7 +32,7 @@ This function should only modify configuration layer settings."
 
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(javascript
+   '(fsharp
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press `SPC f e R' (Vim style) or
@@ -43,7 +43,48 @@ This function should only modify configuration layer settings."
      emacs-lisp
      git
      helm
-     lsp
+     scheme
+     windows-scripts
+     (erlang :variables erlang-backend 'lsp)
+     (python :variables python-backend 'lsp python-lsp-server 'pyright)
+     (javascript :variables javascript-backend 'lsp)
+     (perl5 :variables perl5-backend 'lsp)
+     (csharp :variables csharp-backend 'lsp)
+     ;; (fsharp :variables fsharp-backend 'lsp)
+     (lsp :variables
+          ;; Formatting and indentation - use Cider instead
+          lsp-enable-on-type-formatting t
+          ;; Set to nil to use CIDER features instead of LSP UI
+          lsp-enable-indentation t
+          lsp-enable-snippet t ;; to test again
+
+          ;; symbol highlighting - `lsp-toggle-symbol-highlight` toggles highlighting
+          ;; subtle highlighting for doom-gruvbox-light theme defined in dotspacemacs/user-config
+          lsp-enable-symbol-highlighting t
+
+          ;; Show lint error indicator in the mode line
+          lsp-modeline-diagnostics-enable t
+          ;; lsp-modeline-diagnostics-scope :workspace
+
+          ;; popup documentation boxes
+          ;; lsp-ui-doc-enable nil          ;; disable all doc popups
+          ;; lsp-ui-doc-show-with-cursor nil ;; doc popup for cursor
+          ;; lsp-ui-doc-show-with-mouse t   ;; doc popup for mouse
+          ;; lsp-ui-doc-delay 2             ;; delay in seconds for popup to display
+          lsp-ui-doc-include-signature t ;; include function signature
+          ;; lsp-ui-doc-position 'at-point  ;; positioning of doc popup: top bottom at-point
+          ;; lsp-ui-doc-alignment 'window ;; relative location of doc popup: frame window
+
+          lsp-headerline-breadcrumb-mode t
+          ;; reference count for functions (assume their maybe other lenses in future)
+          lsp-lens-enable t
+
+          ;; Efficient use of space in treemacs-lsp display
+          treemacs-space-between-root-nodes nil
+
+          ;; Optimization for large files
+          lsp-file-watch-threshold 10000
+          lsp-log-io nil)
      ;; markdown
      multiple-cursors
      ;; org
@@ -261,7 +302,7 @@ It should only modify the values of Spacemacs settings."
    dotspacemacs-colorize-cursor-according-to-state t
 
    ;; Default font or prioritized list of fonts.
-   dotspacemacs-default-font '("Source Code Pro-NF"
+   dotspacemacs-default-font '("SauceCodePro NF"
                                :size 10.0
                                :weight normal
                                :width normal)
@@ -278,7 +319,7 @@ It should only modify the values of Spacemacs settings."
 
    ;; The leader key accessible in `emacs state' and `insert state'
    ;; (default "M-m")
-   dotspacemacs-emacs-leader-key "M-m"
+   dotspacemacs-emacs-leader-key "C-;"
 
    ;; Major mode leader key is a shortcut key which is the equivalent of
    ;; pressing `<leader> m`. Set it to `nil` to disable it. (default ",")
@@ -553,11 +594,12 @@ before packages are loaded."
   (global-set-key (kbd "C-o") 'ace-window)
   (global-set-key (kbd "C-x p") 'shell-here)
   (global-set-key (kbd "C-x C-p") 'powershell)
-
-  (global-set-key (kbd "C-c p") 'powershell)
-  (global-set-key (kbd "C-c C-p") 'powershell)
+  (global-set-key (kbd "C-c p") 'vxe/powershell)
+  (global-set-key (kbd "C-c C-p") 'vxe/powershell)
   (global-set-key (kbd "M-}") 'winner-redo)
   (global-set-key (kbd "M-{") 'winner-undo)
+  ;; Control-C hierarchy'
+  (global-set-key (kbd "C-c v") 'org-capture)
   ;; org-mode
   (global-set-key (kbd "C-c ,") 'org-insert-structure-template)
   (global-set-key (kbd "C-c C-'") 'org-roam-find-file)
@@ -581,8 +623,17 @@ before packages are loaded."
   (global-set-key (kbd "C-x v r") 'magit-rebase-popup)
   (global-set-key (kbd "M-g s") 'helm-projectile-ag)
 
+
+  ;; applications
+  (global-set-key (kbd "C-x 4") 'notes-new)
+  (global-set-key (kbd "M-y") 'helm-show-kill-ring)
+
+  ;; custom elisp
+  (progn
+    (load-file "~/.spacemacs.d/ob-powershell.el"))
+
   ;; org-mode
-  (progn 
+  (progn
     (require 'org)
     (require 'ox-org)
     (require 'org-roam)
@@ -615,7 +666,20 @@ before packages are loaded."
     ;; org-mind-map
     (setq org-mind-map-engine "dot"))
 
-  ;; structure editing
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; programming languages
+  ;; Language Setup
+  (progn
+    ;; common lisp     
+    (setq inferior-lisp-program "sbcl.exe") 
+    (defun sly-vxe ()
+      (interactive)
+      (add-to-list 'exec-path "C:/Program Files (x86)/Steel Bank Common Lisp")
+      (sly)))
+  
+  ;; 
+
+  ;; Structure Editing
   (progn
     (require 'lispy)
     (require 'paredit)
@@ -702,7 +766,22 @@ before packages are loaded."
   ;; look and feel
   (progn
     (set-face-attribute 'default nil :height 100))
+  (progn
+    ;; desktop environment specification
+    (defvar DROPBOX "c:/Users/vijay/AppData/Roaming/Documents/Dropbox/")
+    (defvar Files (concat DROPBOX "Windows")))
+  
 
+  ;; notes
+  (defun notes-new ()
+    "Access the notes database"
+    (interactive)
+    (let ((note (completing-read "file: " (seq-filter (lambda (file)
+                                                        (string-match-p ".*[.]org" file))
+                                                      (directory-files "/Users/vijay/Dropbox/Windows/Notes")))))
+      (if (string-match-p ".*[.]org" note)
+          (find-file (concat DROPBOX "Windows/Notes/" note))
+        (find-file (concat DROPBOX "Windows/Notes/" note ".org")))))
   ;; helm
   (progn
     (require 'helm)
@@ -718,6 +797,12 @@ before packages are loaded."
                                         ;(yas-minor-mode)
     )
   )
+;; external applications
+;; powershell
+(defun vxe/powershell ()
+  (interactive)
+  (powershell)
+  (rename-buffer (concat  (buffer-name) (current-time-string))))
 
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
@@ -726,25 +811,32 @@ before packages are loaded."
 This is an auto-generated function, do not modify its content directly, use
 Emacs customize menu instead.
 This function is called at the very end of Spacemacs initialization."
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   '("dc2cdca2f32386a308057cac6abde24c07b470cf17847c784c79ecd3a23ee09a" "bb38670847b79d986a2cd21dfe1895a07d78fc67f16cb780253e23f1b40bdbd5" default))
- '(emacsql-sqlite3-executable "c:/Users/vijay/scoop/shims/sqlite3.exe")
- '(evil-want-Y-yank-to-eol nil)
- '(exec-path
-   '("c:/WINDOWS/system32" "c:/WINDOWS" "c:/WINDOWS/System32/Wbem" "c:/WINDOWS/System32/WindowsPowerShell/v1.0" "c:/WINDOWS/System32/OpenSSH" "c:/Program Files/dotnet" "c:/ProgramData/chocolatey/bin" "c:/Program Files/Git/cmd" "c:/Program Files (x86)/Steel Bank Common Lisp/1.4.14" "c:/Users/vijay/scoop/apps/openjdk/current/bin" "c:/Users/vijay/scoop/shims" "c:/Users/vijay/AppData/Local/Microsoft/WindowsApps" "c:/Program Files (x86)/QuickTime/QTSystem" "c:/Users/vijay/scoop/apps/gcc/current/bin" "c:/Users/vijay/scoop/apps/adoptopenjdk-lts-hotspot/current/bin" "c:/Program Files/Emacs/x86_64/libexec/emacs/27.1/x86_64-w64-mingw32" "c:/Users/vijay/scoop/shims/"))
- '(helm-completion-style 'emacs)
- '(org-roam-directory "c:/Users/vijay/Dropbox/org-roam-windows")
- '(package-selected-packages
-   '(sqlite web-beautify tide typescript-mode tern prettier-js nodejs-repl livid-mode skewer-mode js2-refactor multiple-cursors js2-mode js-doc import-js grizzl impatient-mode htmlize helm-gtags ggtags dap-mode bui cfrs posframe counsel-gtags add-node-modules-path weyland-yutani-theme terraform-mode org-roam emacsql-sqlite3 lsp-treemacs lsp-origami lispy zoutline counsel swiper kubernetes helm-lsp yasnippet-snippets yaml-mode wordnut vscode-dark-plus-theme twittering-mode treemacs-magit hcl-mode sqlite3 smeargle sly shrface powershell ox-gfm emacsql org-mind-map org-mime org-download org-bullets notmuch multi-term magit-svn magit-section magit-gitflow lsp-ui lsp-mode origami markdown-mode ivy magit-popup jsonnet-mode ir-black-theme dash-functional helm-gitignore helm-git-grep helm-fuzzy helm-company helm-c-yasnippet groovy-mode go-mode gitignore-templates gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link fuzzy flycheck-pos-tip pos-tip evil-magit magit git-commit with-editor transient dockerfile-mode dired-sidebar dired-subtree dired-hacks-utils deft company clomacs simple-httpd badger-theme auto-yasnippet yasnippet ac-ispell ac-helm ac-cider auto-complete cider sesman queue parseedn clojure-mode parseclj a ws-butler writeroom-mode winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package undo-tree treemacs-projectile treemacs-persp treemacs-icons-dired toc-org symon symbol-overlay string-inflection spaceline-all-the-icons restart-emacs request rainbow-delimiters popwin pcre2el password-generator paradox overseer org-superstar open-junk-file nameless move-text macrostep lorem-ipsum link-hint indent-guide hybrid-mode hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-xref helm-themes helm-swoop helm-purpose helm-projectile helm-org helm-mode-manager helm-make helm-ls-git helm-flx helm-descbinds helm-ag google-translate golden-ratio font-lock+ flycheck-package flycheck-elsa flx-ido fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-surround evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-escape evil-ediff evil-cleverparens evil-args evil-anzu eval-sexp-fu emr elisp-slime-nav editorconfig dumb-jump dotenv-mode diminish devdocs define-word column-enforce-mode clean-aindent-mode centered-cursor-mode auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-)
+  (custom-set-variables
+   ;; custom-set-variables was added by Custom.
+   ;; If you edit it by hand, you could mess it up, so be careful.
+   ;; Your init file should contain only one such instance.
+   ;; If there is more than one, they won't work right.
+   '(custom-safe-themes
+     '("dc2cdca2f32386a308057cac6abde24c07b470cf17847c784c79ecd3a23ee09a" "bb38670847b79d986a2cd21dfe1895a07d78fc67f16cb780253e23f1b40bdbd5" default))
+   '(emacsql-sqlite3-executable "c:/Users/vijay/scoop/shims/sqlite3.exe")
+   '(evil-want-Y-yank-to-eol nil)
+   '(exec-path
+     '("c:/WINDOWS/system32" "c:/WINDOWS" "c:/WINDOWS/System32/Wbem" "c:/WINDOWS/System32/WindowsPowerShell/v1.0" "c:/WINDOWS/System32/OpenSSH" "c:/Program Files/dotnet" "c:/ProgramData/chocolatey/bin" "c:/Program Files/Git/cmd" "c:/Program Files (x86)/Steel Bank Common Lisp/1.4.14" "c:/Users/vijay/scoop/apps/openjdk/current/bin" "c:/Users/vijay/scoop/shims" "c:/Users/vijay/AppData/Local/Microsoft/WindowsApps" "c:/Program Files (x86)/QuickTime/QTSystem" "c:/Users/vijay/scoop/apps/gcc/current/bin" "c:/Users/vijay/scoop/apps/adoptopenjdk-lts-hotspot/current/bin" "c:/Program Files/Emacs/x86_64/libexec/emacs/27.1/x86_64-w64-mingw32" "c:/Users/vijay/scoop/shims/"))
+   '(helm-completion-style 'emacs)
+   '(lsp-csharp-server-install-dir "c:/Users/vijay/bin/omnisharp-win-x64")
+   '(lsp-headerline-breadcrumb-enable t)
+   '(lsp-pwsh-dir "C:\\Users\\vijay\\.ps1.d\\PowerShellEditorServices")
+   '(org-capture-templates
+     '(("i" "Inbox" entry
+        (file "/Users/vijay/Dropbox/Windows/inbox.org")
+        "** TODO %T %? %^G")))
+   '(org-roam-directory "c:/Users/vijay/Dropbox/org-roam-windows")
+   '(package-selected-packages
+     '(geiser fsharp-mode omnisharp csharp-mode company-plsense yapfify stickyfunc-enhance sphinx-doc pytest pyenv-mode py-isort pippel pipenv pyvenv pip-requirements lsp-python-ms lsp-pyright live-py-mode importmagic epc ctable concurrent deferred helm-pydoc helm-cscope xcscope cython-mode company-anaconda blacken anaconda-mode pythonic erlang slime sqlite web-beautify tide typescript-mode tern prettier-js nodejs-repl livid-mode skewer-mode js2-refactor multiple-cursors js2-mode js-doc import-js grizzl impatient-mode htmlize helm-gtags ggtags dap-mode bui cfrs posframe counsel-gtags add-node-modules-path weyland-yutani-theme terraform-mode org-roam emacsql-sqlite3 lsp-treemacs lsp-origami lispy zoutline counsel swiper kubernetes helm-lsp yasnippet-snippets yaml-mode wordnut vscode-dark-plus-theme twittering-mode treemacs-magit hcl-mode sqlite3 smeargle sly shrface powershell ox-gfm emacsql org-mind-map org-mime org-download org-bullets notmuch multi-term magit-svn magit-section magit-gitflow lsp-ui lsp-mode origami markdown-mode ivy magit-popup jsonnet-mode ir-black-theme dash-functional helm-gitignore helm-git-grep helm-fuzzy helm-company helm-c-yasnippet groovy-mode go-mode gitignore-templates gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link fuzzy flycheck-pos-tip pos-tip evil-magit magit git-commit with-editor transient dockerfile-mode dired-sidebar dired-subtree dired-hacks-utils deft company clomacs simple-httpd badger-theme auto-yasnippet yasnippet ac-ispell ac-helm ac-cider auto-complete cider sesman queue parseedn clojure-mode parseclj a ws-butler writeroom-mode winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package undo-tree treemacs-projectile treemacs-persp treemacs-icons-dired toc-org symon symbol-overlay string-inflection spaceline-all-the-icons restart-emacs request rainbow-delimiters popwin pcre2el password-generator paradox overseer org-superstar open-junk-file nameless move-text macrostep lorem-ipsum link-hint indent-guide hybrid-mode hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-xref helm-themes helm-swoop helm-purpose helm-projectile helm-org helm-mode-manager helm-make helm-ls-git helm-flx helm-descbinds helm-ag google-translate golden-ratio font-lock+ flycheck-package flycheck-elsa flx-ido fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-surround evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-escape evil-ediff evil-cleverparens evil-args evil-anzu eval-sexp-fu emr elisp-slime-nav editorconfig dumb-jump dotenv-mode diminish devdocs define-word column-enforce-mode clean-aindent-mode centered-cursor-mode auto-highlight-symbol auto-compile aggressive-indent ace-link ace-jump-helm-line)))
+  (custom-set-faces
+   ;; custom-set-faces was added by Custom.
+   ;; If you edit it by hand, you could mess it up, so be careful.
+   ;; Your init file should contain only one such instance.
+   ;; If there is more than one, they won't work right.
+   )
+  )
