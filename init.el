@@ -594,8 +594,9 @@ before packages are loaded."
   (global-set-key (kbd "C-o") 'ace-window)
   (global-set-key (kbd "C-x p") 'shell-here)
   (global-set-key (kbd "C-x C-p") 'powershell)
-  (global-set-key (kbd "C-c p") 'vxe/powershell)
-  (global-set-key (kbd "C-c C-p") 'vxe/powershell)
+
+  (global-set-key (kbd "C-c p") 'powershell)
+  (global-set-key (kbd "C-c C-p") 'powershell)
   (global-set-key (kbd "M-}") 'winner-redo)
   (global-set-key (kbd "M-{") 'winner-undo)
   ;; Control-C hierarchy'
@@ -623,7 +624,6 @@ before packages are loaded."
   (global-set-key (kbd "C-x v r") 'magit-rebase-popup)
   (global-set-key (kbd "M-g s") 'helm-projectile-ag)
 
-
   ;; applications
   (global-set-key (kbd "C-x 4") 'notes-new)
   (global-set-key (kbd "M-y") 'helm-show-kill-ring)
@@ -632,6 +632,7 @@ before packages are loaded."
   (progn
     (load-file "~/.spacemacs.d/ob-powershell.el"))
 
+  
   ;; org-mode
   (progn
     (require 'org)
